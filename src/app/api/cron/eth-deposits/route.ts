@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { formatEther, formatUnits } from 'ethers';
-import { supabaseAdmin } from '../../../../lib/supabaseAdmin';
+import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
 export const runtime = 'nodejs';
 
