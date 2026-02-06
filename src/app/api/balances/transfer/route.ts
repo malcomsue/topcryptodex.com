@@ -1,35 +1,76 @@
 import { NextResponse } from 'next/server';
 import crypto from 'node:crypto';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { verifyAuth, unauthorizedResponse } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 
-function isAuthorized(request: Request) {
+function isAdminAuthorized(request: Request) {
   if (!ADMIN_TOKEN) return false;
   const header = request.headers.get('x-admin-token') ?? '';
-  const token = new URL(request.url).searchParams.get('token') ?? '';
-  return header === ADMIN_TOKEN || token === ADMIN_TOKEN;
+  const cookie = request.headers.get('cookie')?.match(/admin_auth=([^;]+)/)?.[1] ?? '';
+  return header === ADMIN_TOKEN || cookie === ADMIN_TOKEN;
 }
 
 export async function POST(request: Request) {
-  const admin = isAuthorized(request);
-  let body: any;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+  const isAdmin = isAdminAuthorized(request);
+  let userId: string;
+
+  // Admin can specify any user_id, regular users use their own
+  if (isAdmin) {
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+    userId = String(body?.user_id ?? '').trim();
+    if (!userId) {
+      return NextResponse.json({ error: 'Missing user_id' }, { status: 400 });
+    }
+    // Re-parse body for other fields since we consumed it
+    const asset = String(body?.asset ?? '').trim().toUpperCase();
+    const fromAccount = String(body?.from_account ?? 'funding').trim().toLowerCase();
+    const toAccount = String(body?.to_account ?? 'spot').trim().toLowerCase();
+    const amount = Number(body?.amount ?? 0);
+    return handleTransfer(userId, asset, fromAccount, toAccount, amount, true);
+  } else {
+    // Regular user - verify JWT
+    let authResult;
+    try {
+      authResult = await verifyAuth(request);
+    } catch (error: any) {
+      return unauthorizedResponse(error.message);
+    }
+    userId = authResult.userId;
+
+    let body: any;
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 });
+    }
+
+    const asset = String(body?.asset ?? '').trim().toUpperCase();
+    const fromAccount = String(body?.from_account ?? 'funding').trim().toLowerCase();
+    const toAccount = String(body?.to_account ?? 'spot').trim().toLowerCase();
+    const amount = Number(body?.amount ?? 0);
+    return handleTransfer(userId, asset, fromAccount, toAccount, amount, false);
   }
+}
 
-  const userId = String(body?.user_id ?? '').trim();
-  const asset = String(body?.asset ?? '').trim().toUpperCase();
-  const fromAccount = String(body?.from_account ?? 'funding').trim().toLowerCase();
-  const toAccount = String(body?.to_account ?? 'spot').trim().toLowerCase();
-  const amount = Number(body?.amount ?? 0);
-
-  if (!userId || !asset) {
-    return NextResponse.json({ error: 'Missing user_id or asset' }, { status: 400 });
+async function handleTransfer(
+  userId: string,
+  asset: string,
+  fromAccount: string,
+  toAccount: string,
+  amount: number,
+  isAdmin: boolean
+) {
+  if (!asset) {
+    return NextResponse.json({ error: 'Missing asset' }, { status: 400 });
   }
   if (!Number.isFinite(amount) || amount <= 0) {
     return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
@@ -72,7 +113,7 @@ export async function POST(request: Request) {
       locked: fromLocked,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'user_id,asset,account_type' },
+    { onConflict: 'user_id,asset,account_type' }
   );
 
   if (fromError) {
@@ -88,7 +129,7 @@ export async function POST(request: Request) {
       locked: toLocked,
       updated_at: new Date().toISOString(),
     },
-    { onConflict: 'user_id,asset,account_type' },
+    { onConflict: 'user_id,asset,account_type' }
   );
 
   if (toError) {
@@ -103,7 +144,7 @@ export async function POST(request: Request) {
       entry_type: 'debit',
       reference_type: 'transfer',
       reference_id: transferId,
-      metadata: { from_account: fromAccount, to_account: toAccount, initiated_by: admin ? 'admin' : 'user' },
+      metadata: { from_account: fromAccount, to_account: toAccount, initiated_by: isAdmin ? 'admin' : 'user' },
     },
     {
       user_id: userId,
@@ -112,7 +153,7 @@ export async function POST(request: Request) {
       entry_type: 'credit',
       reference_type: 'transfer',
       reference_id: transferId,
-      metadata: { from_account: fromAccount, to_account: toAccount, initiated_by: admin ? 'admin' : 'user' },
+      metadata: { from_account: fromAccount, to_account: toAccount, initiated_by: isAdmin ? 'admin' : 'user' },
     },
   ]);
 

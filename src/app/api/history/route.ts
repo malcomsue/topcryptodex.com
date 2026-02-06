@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
+import { verifyAuth, unauthorizedResponse } from '@/lib/auth';
 
 export const runtime = 'nodejs';
 
@@ -14,17 +15,20 @@ function normalizeState(raw: string) {
 }
 
 export async function GET(request: Request) {
+  // Verify authentication
+  let authResult;
+  try {
+    authResult = await verifyAuth(request);
+  } catch (error: any) {
+    return unauthorizedResponse(error.message);
+  }
+
   const { searchParams } = new URL(request.url);
-  const userId = String(searchParams.get('user_id') ?? '').trim();
   const type = normalizeType(String(searchParams.get('type') ?? ''));
   const state = normalizeState(String(searchParams.get('state') ?? ''));
   const start = String(searchParams.get('start') ?? '').trim();
   const end = String(searchParams.get('end') ?? '').trim();
   const limit = Math.min(200, Math.max(1, Number(searchParams.get('limit') ?? '50')));
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Missing user_id' }, { status: 400 });
-  }
 
   const results: Array<Record<string, any>> = [];
 
@@ -32,7 +36,7 @@ export async function GET(request: Request) {
     let query = supabaseAdmin
       .from('deposits')
       .select('id, asset, amount, status, created_at')
-      .eq('user_id', userId);
+      .eq('user_id', authResult.userId);
     if (state) query = query.eq('status', state);
     if (start) query = query.gte('created_at', start);
     if (end) query = query.lte('created_at', end);
@@ -55,7 +59,7 @@ export async function GET(request: Request) {
     let query = supabaseAdmin
       .from('withdrawals')
       .select('id, asset, amount, fee, address, status, created_at')
-      .eq('user_id', userId);
+      .eq('user_id', authResult.userId);
     if (state) query = query.eq('status', state);
     if (start) query = query.gte('created_at', start);
     if (end) query = query.lte('created_at', end);

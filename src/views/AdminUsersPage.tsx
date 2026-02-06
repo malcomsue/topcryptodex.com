@@ -121,6 +121,12 @@ export default function AdminUsersPage() {
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-semibold text-gray-900">Admin — Users & Balances</h1>
             <div className="flex items-center gap-4 text-sm">
+              <a href="/admin/withdrawals" className="text-blue-600 hover:underline">
+                Withdrawals
+              </a>
+              <a href="/admin/wallets" className="text-blue-600 hover:underline">
+                Wallets
+              </a>
               <a href="/admin/kyc" className="text-blue-600 hover:underline">
                 Review KYC
               </a>

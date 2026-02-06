@@ -21,7 +21,7 @@ function formatNumber(value: number | string, digits = 6) {
 }
 
 export default function HistoryPage() {
-  const { user, authenticated } = usePrivy();
+  const { user, authenticated, getAccessToken } = usePrivy();
   const [records, setRecords] = useState<HistoryRecord[]>([]);
   const [type, setType] = useState<'deposit' | 'withdrawal'>('deposit');
   const [state, setState] = useState('');
@@ -40,14 +40,15 @@ export default function HistoryPage() {
     async function load() {
       setLoading(true);
       try {
-        const params = new URLSearchParams({
-          user_id: String(userId),
-          type,
-        });
+        const token = await getAccessToken();
+        const params = new URLSearchParams({ type });
         if (state) params.set('state', state);
         if (start) params.set('start', start);
         if (end) params.set('end', end);
-        const res = await fetch(`/api/history?${params.toString()}`, { cache: 'no-store' });
+        const res = await fetch(`/api/history?${params.toString()}`, {
+          cache: 'no-store',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!res.ok) return;
         const data = await res.json();
         if (cancelled) return;

@@ -209,7 +209,7 @@ function TradingViewWidget({ symbol }: { symbol: string }) {
 }
 
 export default function TradePage() {
-  const { user, authenticated } = usePrivy();
+  const { user, authenticated, getAccessToken } = usePrivy();
   const [pairSymbol, setPairSymbol] = useState<(typeof PAIRS)[number]['symbol']>('BTCUSDT');
   const pair = PAIRS.find((p) => p.symbol === pairSymbol) ?? PAIRS[0];
 
@@ -494,11 +494,15 @@ export default function TradePage() {
     setLoading(true);
     try {
       if (!userId) throw new Error('Please log in');
+      const token = await getAccessToken();
+      if (!token) throw new Error('Please log in');
       const res = await fetch('/api/orders', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify({
-          user_id: String(userId),
           pair: pair.symbol,
           base: pair.base,
           quote: pair.quote,
@@ -566,10 +570,15 @@ export default function TradePage() {
     const userId = (user as any)?.id;
     if (!userId) return;
     try {
+      const token = await getAccessToken();
+      if (!token) return;
       const res = await fetch('/api/orders/cancel', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: String(userId), order_id: orderId }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ order_id: orderId }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -646,9 +655,13 @@ export default function TradePage() {
     let cancelled = false;
     async function loadBalances() {
       try {
+        const token = await getAccessToken();
         const res = await fetch(
-          `/api/balances?user_id=${encodeURIComponent(safeUserId)}&account_type=spot`,
-          { cache: 'no-store' },
+          `/api/balances?account_type=spot`,
+          {
+            cache: 'no-store',
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          },
         );
         if (!res.ok) return;
         const data = await res.json();
@@ -682,7 +695,11 @@ export default function TradePage() {
     let cancelled = false;
     async function loadOrders() {
       try {
-        const res = await fetch(`/api/orders?user_id=${encodeURIComponent(String(userId))}`, { cache: 'no-store' });
+        const token = await getAccessToken();
+        const res = await fetch(`/api/orders`, {
+          cache: 'no-store',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!res.ok) throw new Error('Failed to load orders');
         const data = await res.json();
         if (cancelled) return;
@@ -749,7 +766,11 @@ export default function TradePage() {
     let cancelled = false;
     async function loadHistory() {
       try {
-        const res = await fetch(`/api/history?user_id=${encodeURIComponent(String(userId))}`, { cache: 'no-store' });
+        const token = await getAccessToken();
+        const res = await fetch(`/api/history`, {
+          cache: 'no-store',
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
         if (!res.ok) throw new Error('Failed to load history');
         const data = await res.json();
         if (cancelled) return;

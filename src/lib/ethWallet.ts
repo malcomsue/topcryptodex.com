@@ -16,3 +16,13 @@ export function deriveEthAddress(index: number) {
     derivation_path: path,
   };
 }
+
+/** Returns full HDNodeWallet (with private key) for sweep signing */
+export function deriveEthWallet(index: number): HDNodeWallet {
+  if (!mnemonic) {
+    throw new Error('Missing DEPOSIT_ETH_MNEMONIC');
+  }
+
+  const path = `${basePath}/${index}`;
+  return HDNodeWallet.fromPhrase(mnemonic, undefined, path);
+}

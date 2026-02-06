@@ -77,6 +77,12 @@ export default function AdminKycPage() {
               <a href="/admin" className="text-blue-600 hover:underline">
                 Users
               </a>
+              <a href="/admin/withdrawals" className="text-blue-600 hover:underline">
+                Withdrawals
+              </a>
+              <a href="/admin/wallets" className="text-blue-600 hover:underline">
+                Wallets
+              </a>
               <a href="/admin/conversations" className="text-blue-600 hover:underline">
                 Conversations
               </a>

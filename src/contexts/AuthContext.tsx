@@ -11,12 +11,13 @@ interface AuthContextType {
   signUp: (email?: string, password?: string) => Promise<{ error: any }>;
   signIn: (email?: string, password?: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
+  getAccessToken: () => Promise<string | null>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { ready, authenticated, user, login, logout } = usePrivy();
+  const { ready, authenticated, user, login, logout, getAccessToken } = usePrivy();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -97,6 +98,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     };
 
+    const getToken = async (): Promise<string | null> => {
+      try {
+        return await getAccessToken();
+      } catch {
+        return null;
+      }
+    };
+
     return {
       user: authenticated ? user ?? null : null,
       session: null,
@@ -104,8 +113,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       signIn,
       signUp,
       signOut,
+      getAccessToken: getToken,
     };
-  }, [ready, authenticated, user, login, logout]);
+  }, [ready, authenticated, user, login, logout, getAccessToken]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
