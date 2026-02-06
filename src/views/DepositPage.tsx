@@ -19,7 +19,7 @@ const XRP_DESTINATION_TAG = process.env.NEXT_PUBLIC_DEPOSIT_XRP_DESTINATION_TAG;
 const XRP_REQUIRE_DESTINATION_TAG =
   (process.env.NEXT_PUBLIC_XRP_REQUIRE_DESTINATION_TAG ?? 'true').trim().toLowerCase() !== 'false';
 
-const EVM_CHAIN_ID = Number(process.env.NEXT_PUBLIC_EVM_CHAIN_ID ?? '11155111'); // default Sepolia for testing
+const EVM_CHAIN_ID = Number(process.env.NEXT_PUBLIC_EVM_CHAIN_ID ?? '1');
 const EVM_CHAIN_ID_HEX = `0x${EVM_CHAIN_ID.toString(16)}`;
 const EVM_USDT_CONTRACT = (process.env.NEXT_PUBLIC_EVM_USDT_CONTRACT ?? '').trim();
 
@@ -110,7 +110,7 @@ export default function DepositPage() {
   const depositNetworkLabel = useMemo(() => {
     if (activeAsset === 'USDT') {
       if (selectedNetwork === 'ethereum') {
-        return EVM_CHAIN_ID === 11155111 ? 'Sepolia Testnet (ERC20)' : 'Ethereum Mainnet (ERC20)';
+        return 'Ethereum Mainnet (ERC20)';
       }
       return 'TRON Network (TRC20)';
     }
@@ -127,7 +127,7 @@ export default function DepositPage() {
       return [
         {
           id: 'ethereum',
-          label: EVM_CHAIN_ID === 11155111 ? 'Sepolia Testnet (ERC20)' : 'Ethereum Mainnet (ERC20)',
+          label: 'Ethereum (ERC20)',
         },
         {
           id: 'tron',
@@ -277,8 +277,7 @@ export default function DepositPage() {
   const requireMainnet = async (provider: any) => {
     const chainId = await provider.request({ method: 'eth_chainId' });
     if (String(chainId).toLowerCase() !== EVM_CHAIN_ID_HEX) {
-      const targetName = EVM_CHAIN_ID === 11155111 ? 'Sepolia' : 'Ethereum Mainnet';
-      throw new Error(`Please switch to ${targetName}`);
+      throw new Error('Please switch to Ethereum Mainnet');
     }
   };
 
@@ -414,8 +413,6 @@ export default function DepositPage() {
     setTxLoading(true);
     try {
       const provider = await getEthereumProvider();
-      const targetName = EVM_CHAIN_ID === 11155111 ? 'Sepolia' : 'Ethereum Mainnet';
-
       try {
         await provider.request({
           method: 'wallet_switchEthereumChain',
@@ -424,26 +421,17 @@ export default function DepositPage() {
       } catch (switchError: any) {
         // 4902 = chain not added to wallet
         if (switchError?.code === 4902) {
-          const addParams =
-            EVM_CHAIN_ID === 11155111
-              ? {
-                  chainId: EVM_CHAIN_ID_HEX,
-                  chainName: 'Sepolia',
-                  nativeCurrency: { name: 'SepoliaETH', symbol: 'SEP', decimals: 18 },
-                  rpcUrls: ['https://rpc.sepolia.org'],
-                  blockExplorerUrls: ['https://sepolia.etherscan.io'],
-                }
-              : {
-                  chainId: EVM_CHAIN_ID_HEX,
-                  chainName: 'Ethereum Mainnet',
-                  nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
-                  rpcUrls: ['https://cloudflare-eth.com'],
-                  blockExplorerUrls: ['https://etherscan.io'],
-                };
-
           await provider.request({
             method: 'wallet_addEthereumChain',
-            params: [addParams],
+            params: [
+              {
+                chainId: EVM_CHAIN_ID_HEX,
+                chainName: 'Ethereum Mainnet',
+                nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 },
+                rpcUrls: ['https://cloudflare-eth.com'],
+                blockExplorerUrls: ['https://etherscan.io'],
+              },
+            ],
           });
 
           await provider.request({
@@ -457,7 +445,7 @@ export default function DepositPage() {
 
       const chainId = await provider.request({ method: 'eth_chainId' });
       if (String(chainId).toLowerCase() !== EVM_CHAIN_ID_HEX) {
-        throw new Error(`Network switch failed. Please switch to ${targetName}.`);
+        throw new Error('Network switch failed. Please switch to Ethereum Mainnet.');
       }
     } catch (e: any) {
       setTxError(e?.message ?? 'Unable to switch network');
@@ -747,7 +735,7 @@ export default function DepositPage() {
                 Submitted:{' '}
                 <a
                   className="font-mono underline"
-                  href={`https://${EVM_CHAIN_ID === 11155111 ? 'sepolia.' : ''}etherscan.io/tx/${txHash}`}
+                  href={`https://etherscan.io/tx/${txHash}`}
                   target="_blank"
                   rel="noreferrer"
                 >

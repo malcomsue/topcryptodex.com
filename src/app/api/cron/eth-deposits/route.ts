@@ -6,10 +6,8 @@ export const runtime = 'nodejs';
 
 const CRON_SECRET = process.env.CRON_SECRET;
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY ?? '';
-const CHAIN_ID = Number(process.env.NEXT_PUBLIC_EVM_CHAIN_ID ?? '1');
 const ETHERSCAN_BASE_URL =
-  process.env.ETHERSCAN_BASE_URL ??
-  (CHAIN_ID === 11155111 ? 'https://api-sepolia.etherscan.io' : 'https://api.etherscan.io');
+  process.env.ETHERSCAN_BASE_URL ?? 'https://api.etherscan.io';
 const ERC20_USDT_CONTRACT = (process.env.NEXT_PUBLIC_EVM_USDT_CONTRACT ?? '').trim().toLowerCase();
 const ERC20_USDT_DECIMALS = Number(process.env.DEPOSIT_USDT_DECIMALS ?? '6');
 
