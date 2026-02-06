@@ -5,14 +5,13 @@ import { Copy } from 'lucide-react';
 import { useConnectWallet, usePrivy, useWallets } from '@privy-io/react-auth';
 
 type DepositAsset = 'USDT' | 'BTC' | 'XRP';
-type DepositNetwork = 'ethereum' | 'tron' | 'bitcoin' | 'btc_segwit' | 'btc_lightning' | 'xrp';
+type DepositNetwork = 'ethereum' | 'tron' | 'bitcoin' | 'btc_segwit' | 'xrp';
 
 const PLATFORM_ADDRESSES = {
   // Support both names to reduce env config confusion.
   TRON: process.env.NEXT_PUBLIC_DEPOSIT_TRON_ADDRESS ?? process.env.NEXT_PUBLIC_DEPOSIT_USDT_TRON_ADDRESS,
   BTC: process.env.NEXT_PUBLIC_DEPOSIT_BTC_ADDRESS,
   BTC_LEGACY: process.env.NEXT_PUBLIC_DEPOSIT_BTC_LEGACY_ADDRESS,
-  BTC_LIGHTNING: process.env.NEXT_PUBLIC_DEPOSIT_BTC_LIGHTNING_ADDRESS,
   XRP: process.env.NEXT_PUBLIC_DEPOSIT_XRP_ADDRESS,
 } as const;
 
@@ -96,7 +95,6 @@ export default function DepositPage() {
     if (activeAsset === 'BTC') {
       if (selectedNetwork === 'btc_segwit') return PLATFORM_ADDRESSES.BTC ?? null;
       if (selectedNetwork === 'bitcoin') return PLATFORM_ADDRESSES.BTC_LEGACY ?? null;
-      if (selectedNetwork === 'btc_lightning') return PLATFORM_ADDRESSES.BTC_LIGHTNING ?? null;
       return PLATFORM_ADDRESSES.BTC ?? null;
     }
     if (activeAsset === 'XRP') return PLATFORM_ADDRESSES.XRP ?? null;
@@ -119,7 +117,6 @@ export default function DepositPage() {
     if (activeAsset === 'BTC') {
       if (selectedNetwork === 'btc_segwit') return 'BTC (SegWit)';
       if (selectedNetwork === 'bitcoin') return 'Bitcoin';
-      if (selectedNetwork === 'btc_lightning') return 'Lightning Network';
       return 'Bitcoin';
     }
     return 'XRP Ledger';
@@ -147,10 +144,6 @@ export default function DepositPage() {
         {
           id: 'bitcoin',
           label: 'BTC (Bitcoin)',
-        },
-        {
-          id: 'btc_lightning',
-          label: 'LIGHTNING (Lightning Network)',
         },
       ];
     }
@@ -228,7 +221,6 @@ export default function DepositPage() {
 
   const btcPaymentUri = useMemo(() => {
     if (activeAsset !== 'BTC') return null;
-    if (selectedNetwork === 'btc_lightning') return null;
     const addr = depositAddress ?? '';
     if (!addr) return null;
 
@@ -815,35 +807,25 @@ export default function DepositPage() {
 
         {activeAsset === 'BTC' && (
           <div className="bg-[#151820] border border-white/10 rounded-2xl p-6 space-y-4">
-            <p className="text-sm font-semibold">
-              {selectedNetwork === 'btc_lightning' ? 'Lightning deposit' : 'Optional BTC payment URI'}
-            </p>
-            {selectedNetwork === 'btc_lightning' ? (
-              <p className="text-xs text-white/60">
-                Use the Lightning invoice/address shown above. Amount is typically encoded in the invoice.
-              </p>
-            ) : (
-              <>
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    inputMode="decimal"
-                    value={btcAmount}
-                    onChange={(e) => setBtcAmount(e.target.value)}
-                    placeholder="Amount (BTC)"
-                    className="flex-1 rounded-lg border border-white/10 bg-[#0f1115] px-4 py-3 text-sm"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleCopyBtcUri}
-                    disabled={!btcPaymentUri}
-                    className="px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50"
-                  >
-                    {btcCopied ? 'Copied' : 'Copy URI'}
-                  </button>
-                </div>
-                {btcPaymentUri && <p className="text-xs text-white/60 break-all">{btcPaymentUri}</p>}
-              </>
-            )}
+            <p className="text-sm font-semibold">Optional BTC payment URI</p>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <input
+                inputMode="decimal"
+                value={btcAmount}
+                onChange={(e) => setBtcAmount(e.target.value)}
+                placeholder="Amount (BTC)"
+                className="flex-1 rounded-lg border border-white/10 bg-[#0f1115] px-4 py-3 text-sm"
+              />
+              <button
+                type="button"
+                onClick={handleCopyBtcUri}
+                disabled={!btcPaymentUri}
+                className="px-4 py-3 rounded-lg bg-white/10 hover:bg-white/20 disabled:opacity-50"
+              >
+                {btcCopied ? 'Copied' : 'Copy URI'}
+              </button>
+            </div>
+            {btcPaymentUri && <p className="text-xs text-white/60 break-all">{btcPaymentUri}</p>}
           </div>
         )}
 
