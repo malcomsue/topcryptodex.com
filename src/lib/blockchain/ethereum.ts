@@ -11,7 +11,7 @@ import {
 } from 'ethers';
 import { deriveEthWallet } from '@/lib/ethWallet';
 
-const ETH_RPC_URL = process.env.ETH_RPC_URL ?? '';
+const ETH_RPC_URL = process.env.ETH_RPC_URL ?? 'https://mainnet.infura.io/v3/7bd0ebf99ab844599e0751724b045731';
 const TREASURER_PRIVATE_KEY = process.env.TREASURER_ETH_PRIVATE_KEY ?? '';
 const TREASURER_ADDRESS = process.env.TREASURER_USDT_ETHEREUM_WALLET_ADDRESS ?? '';
 const USDT_CONTRACT = (process.env.NEXT_PUBLIC_EVM_USDT_CONTRACT ?? '').trim();
