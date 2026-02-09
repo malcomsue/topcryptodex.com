@@ -7,8 +7,7 @@ export const runtime = 'nodejs';
 const CRON_SECRET = process.env.CRON_SECRET;
 const ADMIN_TOKEN = process.env.ADMIN_TOKEN;
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY ?? '';
-const ETHERSCAN_BASE_URL =
-  process.env.ETHERSCAN_BASE_URL ?? 'https://api.etherscan.io';
+const ETHERSCAN_BASE_URL = process.env.ETHERSCAN_BASE_URL ?? 'https://api.etherscan.io';
 const ERC20_USDT_CONTRACT = (process.env.NEXT_PUBLIC_EVM_USDT_CONTRACT ?? '').trim().toLowerCase();
 const ERC20_USDT_DECIMALS = Number(process.env.DEPOSIT_USDT_DECIMALS ?? '6');
 
